@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIDNIGHT - Dark Music Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        midnight: {
+                            base: '#0c0a0c',
+                            sidebar: '#121012',
+                            card: '#181518',
+                            hover: '#242024',
+                            border: '#2a242a',
+                            accent: '#e8b496',
+                            accentDark: '#d98e68',
+                            accentLight: '#f4c2a6',
+                            muted: '#8c828a'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'Cairo', 'sans-serif'],
+                        serif: ['"Cinzel"', 'serif'],
+                        display: ['"Instrument Serif"', 'serif'],
+                        playfair: ['"Playfair Display"', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0c0a0c;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #282228;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3e343e;
+        }
+
+        /* Vinyl Spin Animation */
+        @keyframes spinSlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-vinyl-spin {
+            animation: spinSlow 12s linear infinite;
+        }
+        .paused-spin {
+            animation-play-state: paused;
+        }
+
+        /* Equalizer Animation */
+        @keyframes barPulse {
+            0%, 100% { height: 6px; }
+            50% { height: 28px; }
+        }
+        .eq-bar {
+            animation: barPulse 1.2s ease-in-out infinite;
+        }
+        .eq-paused .eq-bar {
+            animation-play-state: paused;
+            height: 4px !important;
+        }
+
+        .glow-accent {
+            box-shadow: 0 0 30px -5px rgba(232, 180, 150, 0.15);
+        }
+        
+        .active-nav {
+            background: linear-gradient(90deg, rgba(232, 180, 150, 0.18) 0%, rgba(232, 180, 150, 0.03) 100%);
+            border-left: 3px solid #e8b496;
+            color: #f4c2a6 !important;
+        }
+
+        /* Dual-color range slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: #2a242a;
+            border-radius: 4px;
+            height: 4px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 12px;
+            width: 12px;
+            border-radius: 50%;
+            background: #e8b496;
+            cursor: pointer;
+            margin-top: -4px;
+            box-shadow: 0 0 6px rgba(232, 180, 150, 0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: transparent;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="bg-midnight-base text-gray-200 font-sans antialiased h-screen overflow-hidden select-none flex flex-col">
+
+    <div class="flex flex-1 h-[calc(100vh-88px)] overflow-hidden">
+
+        <!-- SIDEBAR -->
+        <aside class="w-64 bg-midnight-sidebar border-r border-midnight-border/60 flex flex-col justify-between p-5 z-20 flex-shrink-0">
+            <div class="flex flex-col space-y-7 overflow-y-auto pr-1">
+                <!-- Logo -->
+                <div class="flex flex-col items-start px-2">
+                    <div class="flex items-center space-x-2 text-midnight-accent">
+                        <i class="fa-solid fa-sparkles text-xs tracking-widest"></i>
+                        <span class="text-xs tracking-[0.3em] font-light text-midnight-accent/80 uppercase">✦ ✦ ✦</span>
+                    </div>
+                    <h1 onclick="switchView('home')" class="text-xl font-serif tracking-[0.25em] font-semibold text-gray-100 mt-1 hover:text-midnight-accent transition-colors cursor-pointer">MIDNIGHT</h1>
+                </div>
+
+                <!-- Main Navigation -->
+                <nav class="space-y-1">
+                    <button onclick="switchView('home')" id="nav-home" class="nav-item active-nav w-full flex items-center space-x-3.5 px-3.5 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-gray-200 transition-all">
+                        <i class="fa-solid fa-house text-base w-5 text-center"></i>
+                        <span>Home</span>
+                    </button>
+                    <button onclick="switchView('search')" id="nav-search" class="nav-item w-full flex items-center space-x-3.5 px-3.5 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-gray-200 transition-all">
+                        <i class="fa-solid fa-magnifying-glass text-base w-5 text-center"></i>
+                        <span>Search</span>
+                    </button>
+                    <button onclick="switchView('library')" id="nav-library" class="nav-item w-full flex items-center space-x-3.5 px-3.5 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-gray-200 transition-all">
+                        <i class="fa-solid fa-book-bookmark text-base w-5 text-center"></i>
+                        <span>Your Library</span>
+                    </button>
+                    <button onclick="switchView('liked')" id="nav-liked" class="nav-item w-full flex items-center space-x-3.5 px-3.5 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-gray-200 transition-all">
+                        <i class="fa-solid fa-heart text-base w-5 text-center"></i>
+                        <span>Liked Songs</span>
+                    </button>
+                    <button onclick="switchView('playlists')" id="nav-playlists" class="nav-item w-full flex items-center space-x-3.5 px-3.5 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-gray-200 transition-all">
+                        <i class="fa-solid fa-sliders text-base w-5 text-center"></i>
+                        <span>Playlists</span>
+                    </button>
+                    <button onclick="switchView('albums')" id="nav-albums" class="nav-item w-full flex items-center space-x-3.5 px-3.5 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-gray-200 transition-all">
+                        <i class="fa-solid fa-record-vinyl text-base w-5 text-center"></i>
+                        <span>Albums</span>
+                    </button>
+                    <button onclick="switchView('artists')" id="nav-artists" class="nav-item w-full flex items-center space-x-3.5 px-3.5 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-gray-200 transition-all">
+                        <i class="fa-solid fa-user text-base w-5 text-center"></i>
+                        <span>Artists</span>
+                    </button>
+                </nav>
+
+                <!-- Your Playlists Header -->
+                <div class="pt-3 border-t border-midnight-border/40">
+                    <div class="flex items-center justify-between px-2 mb-3">
+                        <span class="text-[11px] font-semibold tracking-wider text-midnight-muted uppercase">Your Playlists</span>
+                        <button onclick="createNewPlaylist()" class="text-midnight-muted hover:text-midnight-accent transition-colors p-1" title="Create Playlist">
+                            <i class="fa-solid fa-plus text-xs"></i>
+                        </button>
+                    </div>
+
+                    <!-- Playlist Items -->
+                    <div class="space-y-1" id="sidebar-playlists-list"></div>
+                </div>
+            </div>
+
+            <!-- Profile Widget Footer -->
+            <div class="pt-3 border-t border-midnight-border/50 relative">
+                <div data-act="profile-menu" class="flex items-center justify-between p-2 rounded-xl bg-midnight-card/60 hover:bg-midnight-hover cursor-pointer transition-colors border border-midnight-border/30">
+                    <div class="flex items-center space-x-3 min-w-0">
+                        <div id="profile-avatar" class="w-8 h-8 rounded-full bg-midnight-accent/20 text-midnight-accent ring-1 ring-midnight-accent/40 flex items-center justify-center text-xs font-bold uppercase flex-shrink-0">?</div>
+                        <span id="profile-name" class="text-xs font-semibold text-gray-200 truncate">&mdash;</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-xs text-midnight-muted"></i>
+                </div>
+                <div id="profile-menu" class="hidden absolute bottom-full left-0 right-0 mb-2 bg-midnight-card border border-midnight-border/80 rounded-xl shadow-2xl p-1.5 z-50">
+                    <button data-act="logout" class="w-full text-left px-3 py-2 rounded-lg text-xs text-gray-300 hover:bg-midnight-hover hover:text-rose-400 flex items-center space-x-2">
+                        <i class="fa-solid fa-right-from-bracket w-4 text-center"></i><span>Log out</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN DASHBOARD CONTENT -->
+        <main id="main-scroll" class="flex-1 overflow-y-auto bg-midnight-base p-6 md:p-8 flex flex-col space-y-8 relative">
+            
+            <!-- TOP BAR (BACKGROUND REMOVED FOR SEAMLESS BLEND) -->
+            <header class="flex items-center justify-between relative z-30 py-1">
+                <!-- Navigation Arrows -->
+                <div class="flex items-center space-x-2">
+                    <button onclick="navBack()" title="Back" class="w-8 h-8 rounded-full bg-midnight-sidebar/80 border border-midnight-border/60 flex items-center justify-center text-gray-400 hover:text-white hover:bg-midnight-hover transition-colors">
+                        <i class="fa-solid fa-chevron-left text-xs"></i>
+                    </button>
+                    <button onclick="navForward()" title="Forward" class="w-8 h-8 rounded-full bg-midnight-sidebar/80 border border-midnight-border/60 flex items-center justify-center text-gray-400 hover:text-white hover:bg-midnight-hover transition-colors">
+                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                    </button>
+                </div>
+
+                <!-- Top Right Actions -->
+                <div class="flex items-center space-x-3 relative">
+                    <!-- Interactive Notification Icon & Button -->
+                    <button onclick="toggleNotifications(event)" id="notification-btn" class="w-9 h-9 rounded-full bg-midnight-sidebar/80 border border-midnight-border/60 flex items-center justify-center text-gray-300 hover:text-midnight-accent hover:border-midnight-accent/40 transition-colors relative">
+                        <i class="fa-regular fa-bell text-sm"></i>
+                        <span id="notification-dot" class="absolute top-2 right-2 w-2 h-2 bg-midnight-accent rounded-full ring-2 ring-midnight-base"></span>
+                    </button>
+
+                    <!-- Interactive Notifications Dropdown Popup -->
+                    <div id="notifications-dropdown" class="hidden absolute right-0 top-12 w-80 bg-midnight-card/95 border border-midnight-border/80 rounded-2xl shadow-2xl p-4 z-50 space-y-3 backdrop-blur-xl">
+                        <div class="flex items-center justify-between border-b border-midnight-border/50 pb-2">
+                            <span class="text-xs font-semibold text-gray-200 tracking-wider uppercase">Notifications</span>
+                            <button onclick="markAllNotificationsRead()" class="text-[10px] text-midnight-accent hover:underline">Mark all read</button>
+                        </div>
+                        <div id="notifications-list" class="space-y-2 max-h-64 overflow-y-auto text-xs"></div>
+                    </div>
+
+                    <button onclick="playMix()" title="Play a mix made for you" class="w-9 h-9 rounded-full bg-midnight-sidebar/80 border border-midnight-border/60 flex items-center justify-center text-midnight-accent hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-wand-magic-sparkles text-sm"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- VIEW CONTAINER: HOME (DEFAULT) -->
+            <div id="view-home" class="view-panel space-y-8">
+                
+                <!-- HERO FEATURED SECTION -->
+                <section class="relative bg-gradient-to-r from-[#1c181c] via-[#161316] to-[#0f0d0f] border border-midnight-border/60 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between overflow-hidden shadow-2xl">
+                    <div class="absolute -right-10 -bottom-10 w-72 h-72 bg-midnight-accent/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                    <div class="relative group flex-shrink-0 mb-6 md:mb-0">
+                        <img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" id="hero-cover-art" class="w-56 h-56 md:w-64 md:h-64 rounded-2xl object-cover shadow-2xl ring-1 ring-white/10" alt="Hero Album Art">
+                        <div class="absolute inset-0 bg-black/30 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <button onclick="playHeroTrack()" class="w-14 h-14 rounded-full bg-midnight-accent text-midnight-base flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
+                                <i class="fa-solid fa-play text-xl ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 md:ml-8 flex flex-col justify-center space-y-3 z-10 text-center md:text-left">
+                        <div id="hero-label" class="text-[11px] font-semibold tracking-widest text-midnight-accent uppercase">FEATURED TODAY</div>
+                        
+                        <h2 dir="auto" id="hero-title" class="text-4xl md:text-5xl font-playfair font-medium text-gray-100 tracking-tight">&hellip;</h2>
+                        
+                        <div dir="auto" id="hero-artist" data-act="open" data-kind="artist" data-id="0" class="text-lg font-display italic text-midnight-accentLight cursor-pointer hover:underline">&nbsp;</div>
+                        
+                        <div class="flex items-center justify-center md:justify-start space-x-2 text-xs text-midnight-muted pt-1">
+                            <span class="text-rose-400"><i class="fa-solid fa-heart"></i> <span id="hero-likes">0</span></span>
+                            <span>•</span>
+                            <span id="hero-album" dir="auto" class="truncate max-w-[14rem]"></span>
+                        </div>
+
+                        <p class="text-xs text-gray-400 max-w-sm font-light pt-1 leading-relaxed">
+                            <span id="hero-desc" dir="auto"></span>
+                        </p>
+
+                        <div class="flex items-center justify-center md:justify-start space-x-4 pt-3">
+                            <button onclick="playHeroTrack()" class="px-7 py-2.5 rounded-full bg-midnight-accent hover:bg-midnight-accentLight text-midnight-base font-semibold text-xs tracking-wider uppercase transition-all shadow-lg flex items-center space-x-2">
+                                <i class="fa-solid fa-play text-xs" id="hero-btn-icon"></i>
+                                <span id="hero-btn-text">Play</span>
+                            </button>
+                            <button id="hero-like-btn" data-act="like" data-heart="0" data-id="0" class="w-10 h-10 rounded-full border border-midnight-border flex items-center justify-center text-gray-300 hover:text-rose-400 hover:border-rose-400/50 transition-colors">
+                                <i data-size="text-sm" class="fa-regular fa-heart text-sm"></i>
+                            </button>
+                            <button id="hero-menu-btn" data-act="menu" data-id="0" class="w-10 h-10 rounded-full border border-midnight-border flex items-center justify-center text-gray-300 hover:text-white transition-colors">
+                                <i class="fa-solid fa-ellipsis text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="relative hidden lg:flex flex-col items-end justify-between h-64 w-60 z-0">
+                        <div class="relative w-44 h-44 -mr-10 -mt-2">
+                            <div id="hero-vinyl" class="w-full h-full rounded-full bg-neutral-900 ring-8 ring-neutral-800 shadow-2xl flex items-center justify-center border-4 border-neutral-950 animate-vinyl-spin paused-spin">
+                                <div class="w-32 h-32 rounded-full border border-neutral-800 flex items-center justify-center">
+                                    <div class="w-20 h-20 rounded-full border border-neutral-800 flex items-center justify-center">
+                                        <div class="w-12 h-12 rounded-full bg-midnight-accent/90 flex items-center justify-center border border-midnight-accentLight">
+                                            <div class="w-3 h-3 rounded-full bg-neutral-900"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="hero-visualizer" class="flex items-end space-x-1.5 h-8 pr-2 eq-paused">
+                            <div class="w-1 bg-midnight-accent/80 rounded-full eq-bar" style="animation-delay: 0.1s"></div>
+                            <div class="w-1 bg-midnight-accent/80 rounded-full eq-bar" style="animation-delay: 0.4s"></div>
+                            <div class="w-1 bg-midnight-accent/80 rounded-full eq-bar" style="animation-delay: 0.2s"></div>
+                            <div class="w-1 bg-midnight-accent/80 rounded-full eq-bar" style="animation-delay: 0.6s"></div>
+                            <div class="w-1 bg-midnight-accent/80 rounded-full eq-bar" style="animation-delay: 0.3s"></div>
+                            <div class="w-1 bg-midnight-accent/80 rounded-full eq-bar" style="animation-delay: 0.5s"></div>
+                            <div class="w-1 bg-midnight-accent/80 rounded-full eq-bar" style="animation-delay: 0.15s"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION: MADE FOR YOU -->
+                <section class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-base font-semibold text-gray-200">Made for you</h3>
+                    </div>
+                    <div id="home-made-for-you" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+                </section>
+
+                <!-- LOWER DUAL GRID SECTION -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <section class="lg:col-span-7 space-y-4">
+                        <h3 class="text-base font-semibold text-gray-200">Recently played</h3>
+                        <div id="home-recent" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3"></div>
+                    </section>
+                    <section class="lg:col-span-5 space-y-4">
+                        <h3 class="text-base font-semibold text-gray-200">Popular tracks</h3>
+                        <div id="home-popular" class="space-y-2"></div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- VIEW CONTAINER: SEARCH VIEW (INTERACTIVE & RICH) -->
+            <div id="view-search" class="view-panel hidden space-y-6">
+                <!-- Search Input Bar placed inside Search View -->
+                <div class="relative flex items-center group w-full max-w-xl">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 text-xs text-midnight-muted group-focus-within:text-midnight-accent transition-colors"></i>
+                    <input type="text" id="main-search-bar" oninput="handleSearchInput(this.value)" placeholder="Search songs, artists, albums... (English or عربي)" class="w-full bg-midnight-sidebar/90 border border-midnight-border/80 text-xs text-gray-200 placeholder-midnight-muted rounded-full pl-10 pr-10 py-2.5 focus:outline-none focus:border-midnight-accent/70 focus:ring-1 focus:ring-midnight-accent/30 transition-all shadow-inner">
+                    <button id="search-clear-btn" onclick="clearSearch()" class="hidden absolute right-3 text-midnight-muted hover:text-gray-200 transition-colors text-xs p-1">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <!-- Filter Category Tabs -->
+                <div class="flex items-center space-x-2 overflow-x-auto pb-1 border-b border-midnight-border/40">
+                    <button onclick="setSearchFilter('all')" id="filter-all" class="search-filter-btn px-4 py-1.5 rounded-full text-xs font-medium bg-midnight-accent text-midnight-base transition-colors">All</button>
+                    <button onclick="setSearchFilter('songs')" id="filter-songs" class="search-filter-btn px-4 py-1.5 rounded-full text-xs font-medium bg-midnight-card text-gray-400 hover:text-white border border-midnight-border/60 transition-colors">Songs</button>
+                    <button onclick="setSearchFilter('artists')" id="filter-artists" class="search-filter-btn px-4 py-1.5 rounded-full text-xs font-medium bg-midnight-card text-gray-400 hover:text-white border border-midnight-border/60 transition-colors">Artists</button>
+                    <button onclick="setSearchFilter('albums')" id="filter-albums" class="search-filter-btn px-4 py-1.5 rounded-full text-xs font-medium bg-midnight-card text-gray-400 hover:text-white border border-midnight-border/60 transition-colors">Albums</button>
+                    <button onclick="setSearchFilter('playlists')" id="filter-playlists" class="search-filter-btn px-4 py-1.5 rounded-full text-xs font-medium bg-midnight-card text-gray-400 hover:text-white border border-midnight-border/60 transition-colors">Playlists</button>
+                </div>
+
+
+                <div id="search-browse-section" class="space-y-4">
+                    <h3 class="text-base font-semibold text-gray-200">Explore Genres &amp; Moods</h3>
+                    <div id="categories-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+                </div>
+                <div id="search-results-section" class="hidden space-y-6"></div>
+            </div>
+
+
+            <!-- VIEW CONTAINER: YOUR LIBRARY -->
+            <div id="view-library" class="view-panel hidden space-y-6">
+                <h2 class="text-2xl font-serif text-gray-100">Your Library</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="library-content"></div>
+            </div>
+
+            <!-- VIEW CONTAINER: LIKED SONGS -->
+            <div id="view-liked" class="view-panel hidden space-y-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-rose-500/30 to-midnight-accent/30 flex items-center justify-center text-rose-300 border border-rose-500/20">
+                            <i class="fa-solid fa-heart text-3xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-3xl font-serif text-gray-100">Liked Songs</h2>
+                            <p class="text-xs text-midnight-muted mt-1">Your personal collection of loved tracks &bull; <span id="liked-count">0 tracks</span></p>
+                        </div>
+                    </div>
+                    <button id="liked-play" data-act="play-all" data-ctx="" class="px-7 py-2.5 rounded-full bg-midnight-accent hover:bg-midnight-accentLight text-midnight-base font-semibold text-xs tracking-wider uppercase transition-all shadow-lg flex items-center space-x-2">
+                        <i class="fa-solid fa-play text-xs"></i><span>Play</span>
+                    </button>
+                </div>
+                <div class="space-y-2" id="liked-songs-container"></div>
+            </div>
+
+            <!-- VIEW CONTAINER: PLAYLISTS, ALBUMS, ARTISTS, DETAIL -->
+            <div id="view-playlists" class="view-panel hidden space-y-6">
+                <h2 class="text-2xl font-serif text-gray-100">Your Playlists</h2>
+                <p class="text-xs text-midnight-muted">Select or create playlists to organize your aesthetic soundscape.</p>
+                <div id="playlists-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+            </div>
+
+            <div id="view-albums" class="view-panel hidden space-y-6">
+                <h2 class="text-2xl font-serif text-gray-100">Albums</h2>
+                <p class="text-xs text-midnight-muted">Browsing saved full-length record albums.</p>
+                <div id="albums-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+            </div>
+
+            <div id="view-artists" class="view-panel hidden space-y-6">
+                <h2 class="text-2xl font-serif text-gray-100">Artists</h2>
+                <p class="text-xs text-midnight-muted">Featured artists in your collection.</p>
+                <div id="artists-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+            </div>
+
+            <div id="view-detail" class="view-panel hidden space-y-6"></div>
+
+        </main>
+    </div>
+
+    <!-- BOTTOM AUDIO PLAYER BAR -->
+    <footer class="h-22 bg-midnight-sidebar border-t border-midnight-border/70 px-6 py-3.5 flex items-center justify-between z-40 fixed bottom-0 left-0 right-0">
+        
+        <!-- Left Current Song Info -->
+        <div class="flex items-center space-x-4 w-1/4 min-w-[200px]">
+            <img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" id="player-thumb" class="w-12 h-12 rounded-xl object-cover ring-1 ring-white/10" alt="Current Track">
+            <div class="truncate">
+                <h4 id="player-title" data-act="open" data-kind="album" data-id="0" class="text-xs font-semibold text-gray-200 truncate hover:underline cursor-pointer">Nothing playing</h4>
+                <p id="player-artist" data-act="open" data-kind="artist" data-id="0" class="text-[11px] text-midnight-muted truncate hover:underline cursor-pointer">Pick a song</p>
+            </div>
+            <button data-act="like" data-heart="0" data-id="0" id="player-heart" class="text-midnight-muted hover:text-rose-400 transition-colors ml-2">
+                <i data-size="text-xs" class="fa-regular fa-heart text-xs"></i>
+            </button>
+        </div>
+
+        <!-- Center Player Controls & Seek Bar -->
+        <div class="flex flex-col items-center space-y-2 w-2/4 max-w-xl">
+            <div class="flex items-center space-x-6">
+                <button onclick="toggleShuffle()" id="shuffle-btn" class="text-midnight-muted hover:text-midnight-accent transition-colors">
+                    <i class="fa-solid fa-shuffle text-xs"></i>
+                </button>
+                <button onclick="prevTrack()" class="text-gray-300 hover:text-white transition-colors">
+                    <i class="fa-solid fa-backward-step text-sm"></i>
+                </button>
+                
+                <button onclick="togglePlayPause()" id="main-play-btn" class="w-10 h-10 rounded-full bg-midnight-accent text-midnight-base flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-md">
+                    <i class="fa-solid fa-play text-sm ml-0.5" id="main-play-icon"></i>
+                </button>
+                
+                <button onclick="nextTrack()" class="text-gray-300 hover:text-white transition-colors">
+                    <i class="fa-solid fa-forward-step text-sm"></i>
+                </button>
+                <button onclick="toggleRepeat()" id="repeat-btn" class="relative text-midnight-muted hover:text-midnight-accent transition-colors">
+                    <i class="fa-solid fa-repeat text-xs"></i><span id="repeat-one" class="hidden absolute -top-1.5 -right-2 text-[8px] font-bold">1</span>
+                </button>
+            </div>
+
+            <!-- Dual Color Timeline Seek Bar -->
+            <div class="w-full flex items-center space-x-3 text-[11px] font-mono text-midnight-muted">
+                <span id="current-time">0:00</span>
+                <div class="flex-1 relative flex items-center">
+                    <input type="range" id="seek-slider" min="0" max="100" step="0.1" value="0" oninput="updateSeekProgress(this.value)" class="w-full h-1 appearance-none cursor-pointer">
+                </div>
+                <span id="total-time">0:00</span>
+            </div>
+        </div>
+
+        <!-- Right Utilities & Volume Control -->
+        <div class="flex items-center justify-end space-x-4 w-1/4 min-w-[180px]">
+            <button onclick="toggleQueue()" id="queue-btn" title="Queue" class="text-midnight-muted hover:text-white transition-colors">
+                <i class="fa-solid fa-list-ul text-xs"></i>
+            </button>
+            <div class="flex items-center space-x-2">
+                <button onclick="toggleMute()" id="volume-btn" class="text-midnight-muted hover:text-white transition-colors">
+                    <i class="fa-solid fa-volume-high text-xs"></i>
+                </button>
+                <input type="range" id="volume-slider" min="0" max="100" value="80" oninput="adjustVolume(this.value)" class="w-20 h-1 appearance-none cursor-pointer">
+            </div>
+        </div>
+    </footer>
+
+    <audio id="audio" preload="none"></audio>
+
+    <!-- Modal / context menu / queue panel -->
+    <div id="modal-root"></div>
+    <div id="ctx-menu" class="hidden fixed z-[60] w-60 bg-midnight-card border border-midnight-border/80 rounded-xl shadow-2xl p-1.5 backdrop-blur-xl"></div>
+    <div id="queue-panel" class="hidden fixed right-6 bottom-24 w-80 max-h-[60vh] bg-midnight-card/95 border border-midnight-border/80 rounded-2xl shadow-2xl z-50 backdrop-blur-xl flex flex-col">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-midnight-border/50">
+            <span class="text-xs font-semibold text-gray-200 tracking-wider uppercase">Queue</span>
+            <button data-act="queue-clear" class="text-[10px] text-midnight-accent hover:underline">Clear</button>
+        </div>
+        <div id="queue-list" class="overflow-y-auto p-2 space-y-1 text-xs"></div>
+    </div>
+
+
+    <!-- Toast Notification Popup -->
+    <div id="toast" class="fixed bottom-24 right-6 bg-midnight-card border border-midnight-accent/30 text-gray-200 px-4 py-2.5 rounded-xl shadow-2xl text-xs flex items-center space-x-2 translate-y-10 opacity-0 pointer-events-none transition-all duration-300 z-50">
+        <i class="fa-solid fa-circle-info text-midnight-accent"></i>
+        <span id="toast-message">Notification</span>
+    </div>
+
+    <script>
+/* =====================================================================
+   MIDNIGHT client. All data comes from the Express API.
+   ===================================================================== */
+
+// Same-origin when served by Express (port 3000 or a deployed host); otherwise talk to localhost:3000.
+const API_BASE = (location.protocol === 'file:' ||
+    (['localhost', '127.0.0.1'].includes(location.hostname) && location.port !== '3000'))
+    ? 'http://localhost:3000' : '';
+const TOKEN_KEY = 'midnight_token';
+const APP_TITLE = document.title;
+const PLACEHOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    "<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><rect width='120' height='120' fill='#242024'/>" +
+    "<text x='60' y='76' font-size='44' text-anchor='middle' fill='#8c828a'>\u266A</text></svg>");
+const IMG_FALLBACK = `onerror="this.onerror=null;this.src=PLACEHOLDER"`;
+const INPUT_CLS = 'select-text w-full bg-midnight-sidebar/90 border border-midnight-border/80 text-xs text-gray-200 placeholder-midnight-muted rounded-xl px-4 py-2.5 focus:outline-none focus:border-midnight-accent/70 focus:ring-1 focus:ring-midnight-accent/30 transition-all';
+const BTN_PRIMARY = 'px-7 py-2.5 rounded-full bg-midnight-accent hover:bg-midnight-accentLight text-midnight-base font-semibold text-xs tracking-wider uppercase transition-all shadow-lg flex items-center justify-center space-x-2';
+const BTN_OUTLINE = 'px-5 py-2.5 rounded-full border border-midnight-border text-xs font-medium text-gray-300 hover:text-midnight-accent hover:border-midnight-accent/50 transition-colors flex items-center space-x-2';
+const BTN_ROUND = 'w-10 h-10 rounded-full border border-midnight-border flex items-center justify-center text-gray-300 hover:text-white transition-colors';
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const compact = (n) => new Intl.NumberFormat('en', { notation: 'compact' }).format(n || 0);
+const loadingHtml = '<p class="text-xs text-midnight-muted p-4">Loading\u2026</p>';
+const empty = (msg) => `<p class="text-xs text-midnight-muted p-4 col-span-full">${esc(msg)}</p>`;
+const GRID = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4';
+
+function formatTime(secs) {
+    secs = Math.max(0, Math.floor(secs || 0));
+    const m = Math.floor(secs / 60), s = secs % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+}
+function timeAgo(iso) {
+    const s = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (s < 60) return 'just now';
+    if (s < 3600) return `${Math.floor(s / 60)} min ago`;
+    if (s < 86400) return `${Math.floor(s / 3600)} h ago`;
+    return `${Math.floor(s / 86400)} d ago`;
+}
+
+/* ---------------------------------------------------------------- state */
+const audio = $('audio');
+const state = {
+    token: localStorage.getItem(TOKEN_KEY), user: null,
+    liked: new Set(), playlists: [], categories: null,
+    notifications: [], unread: 0,
+    queue: [], qIndex: -1, current: null, prevStack: [],
+    shuffle: false, repeat: 'off', lastVolume: 80,
+    hero: null, heroList: [],
+    filter: 'all', nav: { stack: [], pos: -1 },
+    errStreak: 0, loggedFor: null, ready: false, menuItems: [],
+};
+const tracksById = new Map();
+const lists = {};
+let listSeq = 0;
+const reg = (tracks) => { (tracks || []).forEach((t) => tracksById.set(t.id, t)); return tracks || []; };
+const listId = (tracks) => { const id = `l${++listSeq}`; lists[id] = tracks; return id; };
+const currentView = () => (state.nav.stack[state.nav.pos] || {}).view;
+
+/* ------------------------------------------------------------------ api */
+async function api(path, { method = 'GET', body, auth = true } = {}) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (auth && state.token) headers.Authorization = `Bearer ${state.token}`;
+    let res;
+    try {
+        res = await fetch(`${API_BASE}/api${path}`, { method, headers, body: body !== undefined ? JSON.stringify(body) : undefined });
+    } catch {
+        throw new Error('Cannot reach the server. Is it running?');
+    }
+    let data = null;
+    try { data = await res.json(); } catch { /* 204 / empty */ }
+    if (res.status === 401 && auth) { logout(true); throw new Error('Session expired'); }
+    if (!res.ok) throw new Error((data && data.error) || `Request failed (${res.status})`);
+    return data;
+}
+
+/* ------------------------------------------------------------ toast/UI */
+function showToast(msg) {
+    const toast = $('toast');
+    $('toast-message').innerText = msg;
+    toast.classList.remove('translate-y-10', 'opacity-0', 'pointer-events-none');
+    clearTimeout(showToast.t);
+    showToast.t = setTimeout(() => toast.classList.add('translate-y-10', 'opacity-0', 'pointer-events-none'), 2500);
+}
+function setSliderGradient(slider, percentage) {
+    slider.style.background = `linear-gradient(to right, #e8b496 0%, #e8b496 ${percentage}%, #2a242a ${percentage}%, #2a242a 100%)`;
+}
+function openModal(html, { dismissible = true } = {}) {
+    $('modal-root').innerHTML = `<div id="modal-backdrop" class="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-midnight-card border border-midnight-border/80 rounded-2xl p-6 shadow-2xl">${html}</div></div>`;
+    if (dismissible) $('modal-backdrop').addEventListener('mousedown', (e) => { if (e.target.id === 'modal-backdrop') closeModal(); });
+}
+function closeModal() { $('modal-root').innerHTML = ''; }
+
+/* ----------------------------------------------------------------- auth */
+function showAuth(mode = 'login') {
+    const reg_ = mode === 'register';
+    const notice = sessionStorage.getItem('midnight_notice');
+    sessionStorage.removeItem('midnight_notice');
+    openModal(`
+        <div class="text-center mb-5">
+            <h2 class="text-lg font-serif tracking-[0.25em] font-semibold text-gray-100">MIDNIGHT</h2>
+            <p class="text-[11px] text-midnight-muted mt-1">${reg_ ? 'Create your account' : 'Welcome back'}</p>
+        </div>
+        <form class="space-y-3" onsubmit="submitAuth(event, '${mode}')">
+            ${reg_ ? `<input name="username" required minlength="3" maxlength="30" autocomplete="username" placeholder="Username" class="${INPUT_CLS}">` : ''}
+            ${reg_
+                ? `<input name="email" type="email" required autocomplete="email" placeholder="Email" class="${INPUT_CLS}">`
+                : `<input name="identifier" required autocomplete="username" placeholder="Email or username" class="${INPUT_CLS}">`}
+            <input name="password" type="password" required minlength="${reg_ ? 8 : 1}" autocomplete="${reg_ ? 'new-password' : 'current-password'}" placeholder="Password${reg_ ? ' (min 8 characters)' : ''}" class="${INPUT_CLS}">
+            <p id="auth-error" class="text-[11px] text-rose-400 min-h-[1rem]">${esc(notice || '')}</p>
+            <button type="submit" class="${BTN_PRIMARY} w-full">${reg_ ? 'Create account' : 'Log in'}</button>
+        </form>
+        <p class="text-[11px] text-midnight-muted text-center mt-4">
+            ${reg_ ? 'Already have an account?' : 'New here?'}
+            <button data-act="switch-auth" data-mode="${reg_ ? 'login' : 'register'}" class="text-midnight-accent hover:underline">${reg_ ? 'Log in' : 'Create an account'}</button>
+        </p>`, { dismissible: false });
+}
+
+async function submitAuth(e, mode) {
+    e.preventDefault();
+    const body = Object.fromEntries(new FormData(e.target).entries());
+    const btn = e.target.querySelector('button[type=submit]');
+    btn.disabled = true;
+    try {
+        const data = await api(mode === 'register' ? '/auth/register' : '/auth/login', { method: 'POST', body, auth: false });
+        state.token = data.token;
+        state.user = data.user;
+        localStorage.setItem(TOKEN_KEY, data.token);
+        closeModal();
+        await bootApp();
+    } catch (err) {
+        $('auth-error').textContent = err.message;
+        btn.disabled = false;
+    }
+}
+
+function logout(expired) {
+    localStorage.removeItem(TOKEN_KEY);
+    if (expired) sessionStorage.setItem('midnight_notice', 'Session expired, please log in again.');
+    location.reload();
+}
+
+function renderProfile() {
+    const name = (state.user && state.user.username) || '';
+    $('profile-name').textContent = name || '\u2014';
+    $('profile-avatar').textContent = name.charAt(0);
+}
+
+/* ----------------------------------------------------------------- boot */
+window.addEventListener('DOMContentLoaded', async () => {
+    initPlayerUI();
+    if (!state.token) return showAuth('login');
+    try {
+        state.user = (await api('/auth/me')).user;
+        await bootApp();
+    } catch (err) {
+        if (!state.token) return;
+        openModal(`<h3 class="text-sm font-semibold text-gray-100 mb-2">Can't load MIDNIGHT</h3>
+            <p class="text-xs text-midnight-muted mb-4">${esc(err.message)}</p>
+            <button onclick="location.reload()" class="${BTN_PRIMARY} w-full">Try again</button>`, { dismissible: false });
+    }
+});
+
+async function bootApp() {
+    renderProfile();
+    await Promise.allSettled([loadLikedIds(), loadPlaylists(), loadNotifications(), restorePlayer()]);
+    state.ready = true;
+    state.nav = { stack: [], pos: -1 };
+    navigate('home');
+    clearInterval(bootApp.poll);
+    bootApp.poll = setInterval(() => loadNotifications().catch(() => {}), 60000);
+}
+
+/* ----------------------------------------------------------- navigation */
+const views = {
+    home: renderHome, search: renderSearchView, library: renderLibrary, liked: renderLiked,
+    playlists: renderPlaylistsView, albums: renderAlbumsView, artists: renderArtistsView, detail: renderDetail,
+};
+
+function navigate(view, params = {}, record = true) {
+    if (record) {
+        state.nav.stack = state.nav.stack.slice(0, state.nav.pos + 1);
+        state.nav.stack.push({ view, params });
+        state.nav.pos++;
+    }
+    return showView(view, params);
+}
+function navBack() { if (state.nav.pos > 0) { state.nav.pos--; const s = state.nav.stack[state.nav.pos]; showView(s.view, s.params); } }
+function navForward() { if (state.nav.pos < state.nav.stack.length - 1) { state.nav.pos++; const s = state.nav.stack[state.nav.pos]; showView(s.view, s.params); } }
+function switchView(view) { return navigate(view); }
+function refreshView() { const s = state.nav.stack[state.nav.pos]; if (s) showView(s.view, s.params); }
+
+async function showView(view, params) {
+    document.querySelectorAll('.nav-item').forEach((b) => b.classList.remove('active-nav'));
+    const navEl = $(`nav-${view}`);
+    if (navEl) navEl.classList.add('active-nav');
+    document.querySelectorAll('.view-panel').forEach((p) => p.classList.add('hidden'));
+    $(`view-${view}`).classList.remove('hidden');
+    $('main-scroll').scrollTo(0, 0);
+    try { await views[view](params); }
+    catch (err) { showToast(err.message || 'Something went wrong'); }
+    markPlaying();
+}
+
+/* ------------------------------------------------------ shared templates */
+const heartIcon = (id) => (state.liked.has(id) ? 'fa-solid fa-heart text-rose-400' : 'fa-regular fa-heart');
+const heartBtn = (id, size = 'text-xs') => `<button data-act="like" data-id="${id}" data-heart="${id}" class="text-midnight-muted hover:text-rose-400 transition-colors"><i data-size="${size}" class="${heartIcon(id)} ${size}"></i></button>`;
+function updateHearts() {
+    document.querySelectorAll('[data-heart]').forEach((b) => {
+        const i = b.querySelector('i');
+        if (i) i.className = `${heartIcon(Number(b.dataset.heart))} ${i.dataset.size || 'text-xs'}`;
+    });
+}
+const coverOf = (t, key = 'cover_medium') => t[key] || t.cover_medium || t.cover_small || PLACEHOLDER;
+
+function trackRow(t, i, ctx, { showIndex = true, pl = null } = {}) {
+    const artist = t.artist_id
+        ? `<span data-act="open" data-kind="artist" data-id="${t.artist_id}" class="hover:underline">${esc(t.artist_name)}</span>`
+        : esc(t.artist_name);
+    return `
+    <div data-act="play" data-ctx="${ctx}" data-idx="${i}" data-track-id="${t.id}" class="track-row flex items-center justify-between p-2.5 rounded-xl bg-midnight-card/60 hover:bg-midnight-hover transition-colors cursor-pointer group">
+        <div class="flex items-center space-x-3 min-w-0">
+            ${showIndex ? `<span class="text-xs font-mono text-midnight-muted w-5 text-right flex-shrink-0">${String(i + 1).padStart(2, '0')}</span>` : ''}
+            <img src="${esc(coverOf(t))}" ${IMG_FALLBACK} loading="lazy" class="w-10 h-10 rounded-lg object-cover flex-shrink-0" alt="">
+            <div class="min-w-0">
+                <h4 dir="auto" class="track-title text-xs font-semibold text-gray-200 group-hover:text-midnight-accent transition-colors truncate">${esc(t.title)}</h4>
+                <p dir="auto" class="text-[11px] text-midnight-muted truncate">${artist}</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3 flex-shrink-0 pl-2">
+            <span class="text-xs font-mono text-midnight-muted">${formatTime(t.duration)}</span>
+            ${heartBtn(t.id)}
+            <button data-act="menu" data-id="${t.id}" ${pl ? `data-pl="${pl}"` : ''} class="text-midnight-muted hover:text-white transition-colors" title="More"><i class="fa-solid fa-ellipsis text-xs"></i></button>
+        </div>
+    </div>`;
+}
+
+function card({ kind, id, img, title, sub = '', round = false }) {
+    return `
+    <div data-act="open" data-kind="${kind}" data-id="${esc(id)}" class="bg-midnight-card/80 p-3.5 rounded-2xl border border-midnight-border/40 hover:border-midnight-accent/40 hover:bg-midnight-hover transition-all duration-300 group cursor-pointer flex flex-col justify-between">
+        <div class="relative overflow-hidden ${round ? 'rounded-full' : 'rounded-xl'} mb-3 aspect-square">
+            <img src="${esc(img || PLACEHOLDER)}" ${IMG_FALLBACK} loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="">
+            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <span data-act="card-play" data-kind="${kind}" data-id="${esc(id)}" class="w-10 h-10 rounded-full bg-midnight-accent text-midnight-base flex items-center justify-center shadow-lg">
+                    <i class="fa-solid fa-play text-sm ml-0.5"></i></span>
+            </div>
+        </div>
+        <div>
+            <h4 dir="auto" class="text-xs font-semibold text-gray-200 group-hover:text-midnight-accent transition-colors truncate">${esc(title)}</h4>
+            <p dir="auto" class="text-[11px] text-midnight-muted mt-1 line-clamp-2">${esc(sub)}</p>
+        </div>
+    </div>`;
+}
+
+function markPlaying() {
+    const id = state.current && state.current.id;
+    document.querySelectorAll('.track-row').forEach((row) => {
+        const title = row.querySelector('.track-title');
+        if (title) title.classList.toggle('text-midnight-accent', Number(row.dataset.trackId) === id);
+    });
+}
+
+/* ----------------------------------------------------------------- home */
+async function renderHome() {
+    if (!$('home-popular').innerHTML) {
+        $('home-made-for-you').innerHTML = loadingHtml;
+        $('home-popular').innerHTML = loadingHtml;
+    }
+    const [home, recent] = await Promise.all([
+        api('/music/home'),
+        api('/library/history?limit=10').catch(() => ({ tracks: [] })),
+    ]);
+
+    state.heroList = reg(home.popular);
+    fillHero(home.hero, home.hero_likes);
+
+    $('home-made-for-you').innerHTML = home.playlists.length
+        ? home.playlists.map((p) => card({ kind: 'dz', id: p.id, img: p.cover_big || p.cover, title: p.title, sub: `${p.nb_tracks} tracks${p.creator ? ' \u2022 ' + p.creator : ''}` })).join('')
+        : empty('No playlists available right now.');
+
+    const recentTracks = reg(recent.tracks);
+    const rctx = listId(recentTracks);
+    $('home-recent').innerHTML = recentTracks.length
+        ? recentTracks.map((t, i) => `
+            <div data-act="play" data-ctx="${rctx}" data-idx="${i}" data-track-id="${t.id}" class="track-row group cursor-pointer">
+                <div class="relative aspect-square rounded-xl overflow-hidden mb-2">
+                    <img src="${esc(coverOf(t))}" ${IMG_FALLBACK} loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="">
+                </div>
+                <h4 dir="auto" class="track-title text-xs font-medium text-gray-200 truncate group-hover:text-midnight-accent transition-colors">${esc(t.title)}</h4>
+                <p dir="auto" class="text-[10px] text-midnight-muted truncate">${esc(t.artist_name)}</p>
+            </div>`).join('')
+        : empty('Songs you play will show up here.');
+
+    const pctx = listId(state.heroList);
+    $('home-popular').innerHTML = state.heroList.length
+        ? state.heroList.map((t, i) => trackRow(t, i, pctx)).join('')
+        : empty('Nothing to show right now.');
+}
+
+function fillHero(t, likes) {
+    state.hero = t;
+    const id = t ? t.id : 0;
+    $('hero-title').textContent = t ? t.title : 'Nothing to show yet';
+    $('hero-artist').textContent = t ? t.artist_name : '\u00A0';
+    $('hero-artist').dataset.id = (t && t.artist_id) || 0;
+    $('hero-cover-art').src = t ? coverOf(t, 'cover_big') : PLACEHOLDER;
+    $('hero-likes').textContent = compact(likes || 0);
+    $('hero-album').textContent = t ? t.album_title : '';
+    $('hero-desc').textContent = t ? `From the album \u201C${t.album_title}\u201D` : '';
+    $('hero-like-btn').dataset.id = id;
+    $('hero-like-btn').dataset.heart = id;
+    $('hero-menu-btn').dataset.id = id;
+    updateHearts();
+    updatePlayStateUI();
+}
+
+function playHeroTrack() {
+    if (!state.hero) return;
+    if (state.current && state.current.id === state.hero.id) return togglePlayPause();
+    const idx = state.heroList.findIndex((t) => t.id === state.hero.id);
+    playQueue(idx >= 0 ? state.heroList : [state.hero], Math.max(idx, 0));
+}
+
+/* --------------------------------------------------------------- search */
+let searchTimer = null, searchSeq = 0;
+
+async function renderSearchView() {
+    if (!state.categories) {
+        try { state.categories = (await api('/music/categories')).categories; }
+        catch (err) { showToast(err.message); }
+    }
+    $('categories-grid').innerHTML = (state.categories || []).map((c) => `
+        <div data-act="open" data-kind="category" data-id="${esc(c.slug)}" class="relative h-32 rounded-2xl overflow-hidden bg-gradient-to-br ${esc(c.gradient)} border border-white/10 p-3 flex flex-col justify-between cursor-pointer hover:scale-[1.03] transition-all group shadow-lg">
+            <span class="text-xs font-semibold text-gray-100 z-10">${esc(c.label)}</span>
+            <i class="fa-solid ${esc(c.icon)} absolute bottom-2 right-2 text-3xl text-white/10 group-hover:text-midnight-accent/40 transition-colors"></i>
+        </div>`).join('') || empty('No categories yet.');
+    if (!$('main-search-bar').value.trim()) resetSearchBrowseState();
+}
+
+function handleSearchInput(value) {
+    const q = value.trim();
+    $('search-clear-btn').classList.toggle('hidden', !q);
+    clearTimeout(searchTimer);
+    if (!q) { searchSeq++; return resetSearchBrowseState(); }
+    if (currentView() !== 'search') switchView('search');
+    searchTimer = setTimeout(() => performLiveSearch(q), 350);
+}
+function clearSearch() {
+    $('main-search-bar').value = '';
+    $('search-clear-btn').classList.add('hidden');
+    searchSeq++;
+    resetSearchBrowseState();
+}
+function resetSearchBrowseState() {
+    $('search-browse-section').classList.remove('hidden');
+    $('search-results-section').classList.add('hidden');
+}
+function setSearchFilter(filter) {
+    state.filter = filter;
+    document.querySelectorAll('.search-filter-btn').forEach((btn) => {
+        btn.className = 'search-filter-btn px-4 py-1.5 rounded-full text-xs font-medium bg-midnight-card text-gray-400 hover:text-white border border-midnight-border/60 transition-colors';
+    });
+    const active = $(`filter-${filter}`);
+    if (active) active.className = 'search-filter-btn px-4 py-1.5 rounded-full text-xs font-medium bg-midnight-accent text-midnight-base transition-colors';
+    const q = $('main-search-bar').value.trim();
+    if (q) performLiveSearch(q);
+}
+
+async function performLiveSearch(q) {
+    const seq = ++searchSeq;
+    $('search-browse-section').classList.add('hidden');
+    const box = $('search-results-section');
+    box.classList.remove('hidden');
+    box.innerHTML = loadingHtml;
+    try {
+        const r = await api(`/music/search?q=${encodeURIComponent(q)}&type=${state.filter}`);
+        if (seq !== searchSeq) return;
+        renderSearchResults(q, r);
+    } catch (err) {
+        if (seq === searchSeq) box.innerHTML = empty(err.message);
+    }
+}
+
+function renderSearchResults(q, r) {
+    const tracks = reg(r.tracks), artists = r.artists || [], albums = r.albums || [], playlists = r.playlists || [];
+    const f = state.filter, ctx = listId(tracks);
+    const total = tracks.length + artists.length + albums.length + playlists.length;
+    const section = (title, inner) => `<div class="space-y-3"><h4 class="text-xs font-semibold text-midnight-muted uppercase tracking-wider">${title}</h4><div class="${GRID}">${inner}</div></div>`;
+
+    let html = `<p class="text-xs text-midnight-muted font-medium">${total ? `Results for "${esc(q)}"` : `No results found for "${esc(q)}"`}</p>`;
+    if (!total) html += empty('Try searching for another artist or song title.');
+
+    if (tracks.length && (f === 'all' || f === 'songs')) {
+        html += `<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-5 bg-midnight-card/80 p-5 rounded-2xl border border-midnight-border/60 hover:border-midnight-accent/30 transition-all flex flex-col justify-between">${topResultHtml(q, r, ctx)}</div>
+            <div class="lg:col-span-7 space-y-2">
+                <h4 class="text-xs font-semibold text-midnight-muted uppercase tracking-wider mb-2">Matching Tracks</h4>
+                <div class="space-y-2">${tracks.map((t, i) => trackRow(t, i, ctx, { showIndex: false })).join('')}</div>
+            </div></div>`;
+    }
+    if (artists.length && (f === 'all' || f === 'artists')) {
+        html += section('Artists', artists.map((a) => card({ kind: 'artist', id: a.id, img: a.picture_big || a.picture, title: a.name, sub: `${compact(a.fans)} fans`, round: true })).join(''));
+    }
+    if (albums.length && (f === 'all' || f === 'albums')) {
+        html += section('Albums', albums.map((a) => card({ kind: 'album', id: a.id, img: a.cover_big || a.cover, title: a.title, sub: a.artist_name })).join(''));
+    }
+    if (playlists.length && (f === 'all' || f === 'playlists')) {
+        html += section('Playlists', playlists.map((p) => card({ kind: 'dz', id: p.id, img: p.cover_big || p.cover, title: p.title, sub: `${p.nb_tracks} tracks` })).join(''));
+    }
+    $('search-results-section').innerHTML = html;
+    markPlaying();
+}
+
+function topResultHtml(q, r, ctx) {
+    const a = r.artists && r.artists[0];
+    if (state.filter === 'all' && a && a.name.toLowerCase() === q.toLowerCase()) {
+        return `<div class="space-y-3">
+                <span class="text-[10px] font-semibold text-midnight-accent uppercase tracking-widest">Top Result</span>
+                <img src="${esc(a.picture_big || a.picture)}" ${IMG_FALLBACK} class="w-24 h-24 rounded-full object-cover shadow-lg ring-1 ring-white/10" alt="">
+                <div><h3 dir="auto" class="text-lg font-bold text-gray-100">${esc(a.name)}</h3>
+                <p class="text-xs text-midnight-muted mt-0.5">Artist \u2022 ${compact(a.fans)} fans</p></div>
+            </div>
+            <div class="pt-4 flex justify-end">
+                <button data-act="open" data-kind="artist" data-id="${a.id}" class="px-5 py-2 rounded-full bg-midnight-accent text-midnight-base text-xs font-semibold hover:scale-105 transition-transform">View artist</button>
+            </div>`;
+    }
+    const t = r.tracks[0];
+    return `<div class="space-y-3">
+            <span class="text-[10px] font-semibold text-midnight-accent uppercase tracking-widest">Top Result</span>
+            <img src="${esc(coverOf(t, 'cover_big'))}" ${IMG_FALLBACK} class="w-24 h-24 rounded-xl object-cover shadow-lg ring-1 ring-white/10" alt="">
+            <div><h3 dir="auto" class="text-lg font-bold text-gray-100">${esc(t.title)}</h3>
+            <p dir="auto" class="text-xs text-midnight-muted mt-0.5">${esc(t.artist_name)} \u2022 <span class="text-midnight-accent">${esc(t.album_title)}</span></p></div>
+        </div>
+        <div class="pt-4 flex items-center justify-between">
+            <span class="text-xs font-mono text-midnight-muted">${formatTime(t.duration)}</span>
+            <button data-act="play" data-ctx="${ctx}" data-idx="0" data-track-id="${t.id}" class="w-10 h-10 rounded-full bg-midnight-accent text-midnight-base flex items-center justify-center shadow-lg hover:scale-105 transition-transform">
+                <i class="fa-solid fa-play text-sm ml-0.5"></i></button>
+        </div>`;
+}
+
+/* ---------------------------------------------------- library & lists */
+async function renderLibrary() {
+    const s = await api('/library/summary');
+    const tile = (icon, title, sub, view) => `
+        <div class="bg-midnight-card p-4 rounded-xl border border-midnight-border/40 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 rounded-lg bg-midnight-accent/20 flex items-center justify-center text-midnight-accent"><i class="fa-solid ${icon} text-lg"></i></div>
+                <div><h4 class="font-semibold text-sm">${title}</h4><p class="text-xs text-midnight-muted">${sub}</p></div>
+            </div>
+            <button onclick="switchView('${view}')" class="px-4 py-1.5 rounded-full bg-midnight-hover text-xs font-medium hover:text-midnight-accent">Open</button>
+        </div>`;
+    $('library-content').innerHTML =
+        tile('fa-heart', 'Liked Songs', `${s.likes} tracks`, 'liked') +
+        tile('fa-sliders', 'Playlists', `${s.playlists} playlists`, 'playlists') +
+        tile('fa-record-vinyl', 'Albums', `${s.albums} saved`, 'albums') +
+        tile('fa-user', 'Artists', `${s.artists} followed`, 'artists');
+}
+
+async function renderLiked() {
+    const { tracks } = await api('/likes');
+    reg(tracks);
+    state.liked = new Set(tracks.map((t) => t.id));
+    const ctx = listId(tracks);
+    $('liked-count').textContent = `${tracks.length} track${tracks.length === 1 ? '' : 's'}`;
+    $('liked-play').dataset.ctx = ctx;
+    $('liked-songs-container').innerHTML = tracks.length
+        ? tracks.map((t, i) => trackRow(t, i, ctx)).join('')
+        : empty('No liked songs yet. Tap the heart on any song.');
+}
+
+const plThumb = (p, size) => p.cover
+    ? `<img src="${esc(p.cover)}" ${IMG_FALLBACK} class="${size} rounded object-cover shadow flex-shrink-0" alt="">`
+    : `<div class="${size} rounded bg-midnight-hover flex items-center justify-center text-midnight-muted flex-shrink-0"><i class="fa-solid fa-music text-[10px]"></i></div>`;
+
+async function loadPlaylists() {
+    state.playlists = (await api('/playlists')).playlists;
+    $('sidebar-playlists-list').innerHTML = state.playlists.length
+        ? state.playlists.map((p) => `
+            <div data-act="open" data-kind="playlist" data-id="${p.id}" class="flex items-center space-x-3 p-1.5 rounded-lg hover:bg-midnight-hover/70 cursor-pointer group transition-colors">
+                ${plThumb(p, 'w-8 h-8')}
+                <span dir="auto" class="text-xs font-medium text-gray-300 group-hover:text-midnight-accent transition-colors truncate">${esc(p.name)}</span>
+            </div>`).join('')
+        : '<p class="text-[11px] text-midnight-muted px-2">No playlists yet. Tap + to create one.</p>';
+}
+
+async function renderPlaylistsView() {
+    await loadPlaylists();
+    $('playlists-grid').innerHTML =
+        state.playlists.map((p) => card({ kind: 'playlist', id: p.id, img: p.cover, title: p.name, sub: `${p.track_count} track${p.track_count === 1 ? '' : 's'}` })).join('') +
+        `<div onclick="createNewPlaylist()" class="border border-dashed border-midnight-border rounded-2xl p-3.5 flex flex-col items-center justify-center text-midnight-muted hover:text-midnight-accent hover:border-midnight-accent/50 cursor-pointer transition-colors min-h-[10rem]">
+            <i class="fa-solid fa-plus text-2xl mb-2"></i><span class="text-xs font-medium">New playlist</span></div>`;
+}
+
+async function renderAlbumsView() {
+    const { albums } = await api('/library/albums');
+    $('albums-grid').innerHTML = albums.length
+        ? albums.map((a) => card({ kind: 'album', id: a.id, img: a.cover, title: a.title, sub: a.artist_name })).join('')
+        : empty('No saved albums yet. Open an album and press Save.');
+}
+
+async function renderArtistsView() {
+    const { artists } = await api('/library/artists');
+    $('artists-grid').innerHTML = artists.length
+        ? artists.map((a) => card({ kind: 'artist', id: a.id, img: a.picture, title: a.name, sub: 'Artist', round: true })).join('')
+        : empty('You are not following any artists yet. Open an artist and press Follow.');
+}
+
+/* ---------------------------------------------------------- detail page */
+async function loadCollection(kind, id) {
+    switch (kind) {
+        case 'artist': {
+            const r = await api(`/music/artists/${id}`);
+            return { label: 'Artist', title: r.artist.name, sub: `${compact(r.artist.fans)} fans`, img: r.artist.picture_big || r.artist.picture, round: true, tracks: reg(r.top), albums: r.albums, flag: r.following };
+        }
+        case 'album': {
+            const r = await api(`/music/albums/${id}`);
+            const year = (r.album.release_date || '').slice(0, 4);
+            return { label: 'Album', title: r.album.title, sub: [r.album.artist_name, year, `${r.tracks.length} tracks`].filter(Boolean).join(' \u2022 '), img: r.album.cover_big || r.album.cover, tracks: reg(r.tracks), flag: r.saved };
+        }
+        case 'dz': {
+            const r = await api(`/music/playlists/${id}`);
+            return { label: 'Playlist', title: r.playlist.title, sub: r.playlist.description || `${r.tracks.length} tracks${r.playlist.creator ? ' \u2022 ' + r.playlist.creator : ''}`, img: r.playlist.cover_big || r.playlist.cover, tracks: reg(r.tracks) };
+        }
+        case 'category': {
+            const r = await api(`/music/categories/${encodeURIComponent(id)}`);
+            return { label: 'Genre / Mood', title: r.category.label, sub: `${r.tracks.length} tracks`, img: r.tracks[0] ? coverOf(r.tracks[0], 'cover_big') : null, tracks: reg(r.tracks) };
+        }
+        case 'playlist': {
+            const r = await api(`/playlists/${id}`);
+            return { label: 'Your playlist', title: r.playlist.name, sub: r.playlist.description || `${r.tracks.length} track${r.tracks.length === 1 ? '' : 's'}`, img: r.tracks[0] ? coverOf(r.tracks[0], 'cover_big') : null, tracks: reg(r.tracks) };
+        }
+        default: throw new Error('Unknown item');
+    }
+}
+
+const followBtn = (id, on) => `<button data-act="follow-artist" data-id="${id}" data-on="${on ? 1 : 0}" class="${BTN_OUTLINE} ${on ? 'text-midnight-accent border-midnight-accent/50' : ''}"><i class="fa-solid ${on ? 'fa-user-check' : 'fa-user-plus'} text-xs"></i><span>${on ? 'Following' : 'Follow'}</span></button>`;
+const saveBtn = (id, on) => `<button data-act="save-album" data-id="${id}" data-on="${on ? 1 : 0}" class="${BTN_OUTLINE} ${on ? 'text-midnight-accent border-midnight-accent/50' : ''}"><i class="fa-solid ${on ? 'fa-check' : 'fa-plus'} text-xs"></i><span>${on ? 'Saved' : 'Save'}</span></button>`;
+
+async function renderDetail({ kind, id }) {
+    const el = $('view-detail');
+    el.innerHTML = loadingHtml;
+    const c = await loadCollection(kind, id);
+    const ctx = listId(c.tracks);
+
+    let buttons = `<button data-act="play-all" data-ctx="${ctx}" class="${BTN_PRIMARY}"><i class="fa-solid fa-play text-xs"></i><span>Play</span></button>`;
+    if (kind === 'artist') buttons += followBtn(id, c.flag);
+    if (kind === 'album') buttons += saveBtn(id, c.flag);
+    if (kind === 'playlist') {
+        buttons += `<button data-act="rename-playlist" data-id="${id}" class="${BTN_ROUND}" title="Rename"><i class="fa-solid fa-pen text-sm"></i></button>
+                    <button data-act="delete-playlist" data-id="${id}" class="${BTN_ROUND} hover:!text-rose-400" title="Delete playlist"><i class="fa-solid fa-trash text-sm"></i></button>`;
+    }
+
+    const rows = c.tracks.length
+        ? c.tracks.map((t, i) => trackRow(t, i, ctx, { pl: kind === 'playlist' ? id : null })).join('')
+        : empty(kind === 'playlist' ? 'This playlist is empty. Use the \u22EF menu on any song to add it here.' : 'No tracks found.');
+    const albumsGrid = c.albums && c.albums.length
+        ? `<div class="space-y-3 pt-4"><h4 class="text-xs font-semibold text-midnight-muted uppercase tracking-wider">Albums</h4><div class="${GRID}">${c.albums.map((a) => card({ kind: 'album', id: a.id, img: a.cover_big || a.cover, title: a.title, sub: (a.release_date || '').slice(0, 4) })).join('')}</div></div>`
+        : '';
+
+    el.innerHTML = `
+        <div class="flex flex-col md:flex-row items-center md:items-end gap-6">
+            <img src="${esc(c.img || PLACEHOLDER)}" ${IMG_FALLBACK} class="w-44 h-44 md:w-52 md:h-52 ${c.round ? 'rounded-full' : 'rounded-2xl'} object-cover shadow-2xl ring-1 ring-white/10 flex-shrink-0" alt="">
+            <div class="text-center md:text-left space-y-2 min-w-0">
+                <div class="text-[11px] font-semibold tracking-widest text-midnight-accent uppercase">${esc(c.label)}</div>
+                <h2 dir="auto" class="text-3xl md:text-5xl font-playfair font-medium text-gray-100 tracking-tight break-words">${esc(c.title)}</h2>
+                <p dir="auto" class="text-xs text-midnight-muted">${esc(c.sub)}</p>
+                <div class="flex items-center justify-center md:justify-start gap-3 pt-3">${buttons}</div>
+            </div>
+        </div>
+        <div class="space-y-2 pt-2">${rows}</div>${albumsGrid}`;
+}
+
+/* ------------------------------------------------------------ playback */
+function initPlayerUI() {
+    const seek = $('seek-slider');
+    seek.value = 0; setSliderGradient(seek, 0);
+    const vol = $('volume-slider');
+    vol.value = 80; adjustVolume(80, false);
+    seek.addEventListener('pointerdown', () => { state.seeking = true; });
+    window.addEventListener('pointerup', () => { state.seeking = false; });
+
+    audio.addEventListener('timeupdate', () => {
+        if (state.seeking || !isFinite(audio.duration) || !audio.duration) return;
+        const pct = (audio.currentTime / audio.duration) * 100;
+        seek.value = pct; setSliderGradient(seek, pct);
+        $('current-time').innerText = formatTime(audio.currentTime);
+    });
+    audio.addEventListener('loadedmetadata', () => { $('total-time').innerText = formatTime(audio.duration); });
+    audio.addEventListener('play', updatePlayStateUI);
+    audio.addEventListener('pause', updatePlayStateUI);
+    audio.addEventListener('playing', () => {
+        state.errStreak = 0;
+        if (state.current && state.loggedFor !== state.current.id) {
+            state.loggedFor = state.current.id;
+            api('/library/history', { method: 'POST', body: { trackId: state.current.id } }).catch(() => {});
+        }
+    });
+    audio.addEventListener('ended', () => nextTrack(true));
+    audio.addEventListener('error', () => {
+        if (!audio.getAttribute('src') || !state.current) return;
+        state.errStreak++;
+        showToast(`Preview unavailable: ${state.current.title}`);
+        if (state.errStreak < Math.min(state.queue.length, 5)) nextTrack(true);
+    });
+    updatePlayerUI();
+}
+
+function playQueue(tracks, index = 0) {
+    if (!tracks || !tracks.length) return;
+    state.queue = reg(tracks.slice());
+    state.qIndex = index;
+    state.prevStack = [];
+    loadAndPlay(state.queue[index]);
+    saveStateSoon();
+}
+
+function loadAndPlay(track, { autoplay = true } = {}) {
+    state.current = track;
+    state.loggedFor = null;
+    audio.src = `${API_BASE}/api/stream/${track.id}`;
+    updatePlayerUI();
+    if (autoplay) audio.play().catch(onPlayError);
+    markPlaying();
+    renderQueue();
+}
+
+function onPlayError(err) {
+    if (!err || err.name === 'AbortError') return;
+    if (err.name === 'NotAllowedError') showToast('Press play to start the music');
+}
+
+function togglePlayPause() {
+    if (!state.current) return state.hero ? playHeroTrack() : showToast('Pick a song to play');
+    if (audio.paused) audio.play().catch(onPlayError); else audio.pause();
+}
+
+function nextTrack(auto = false) {
+    if (!state.queue.length) return;
+    if (auto && state.repeat === 'one') { audio.currentTime = 0; audio.play().catch(onPlayError); return; }
+    let next;
+    if (state.shuffle && state.queue.length > 1) {
+        do { next = Math.floor(Math.random() * state.queue.length); } while (next === state.qIndex);
+    } else {
+        next = state.qIndex + 1;
+        if (next >= state.queue.length) {
+            if (auto && state.repeat !== 'all') { audio.pause(); audio.currentTime = 0; return; }
+            next = 0;
+        }
+    }
+    state.prevStack.push(state.qIndex);
+    state.qIndex = next;
+    loadAndPlay(state.queue[next]);
+    saveStateSoon();
+}
+
+function prevTrack() {
+    if (!state.queue.length) return;
+    if (audio.currentTime > 3) { audio.currentTime = 0; return; }
+    const prev = state.prevStack.length ? state.prevStack.pop() : (state.qIndex - 1 + state.queue.length) % state.queue.length;
+    state.qIndex = prev;
+    loadAndPlay(state.queue[prev]);
+    saveStateSoon();
+}
+
+function updatePlayerUI() {
+    const t = state.current;
+    $('player-title').innerText = t ? t.title : 'Nothing playing';
+    $('player-artist').innerText = t ? t.artist_name : 'Pick a song';
+    $('player-title').dataset.id = (t && t.album_id) || 0;
+    $('player-artist').dataset.id = (t && t.artist_id) || 0;
+    $('player-thumb').src = t ? coverOf(t, 'cover_small') : PLACEHOLDER;
+    $('player-heart').dataset.id = t ? t.id : 0;
+    $('player-heart').dataset.heart = t ? t.id : 0;
+    $('seek-slider').value = 0; setSliderGradient($('seek-slider'), 0);
+    $('current-time').innerText = '0:00';
+    $('total-time').innerText = '0:00';
+    updateHearts();
+    updatePlayStateUI();
+}
+
+function updatePlayStateUI() {
+    const playing = !audio.paused && !!state.current;
+    const heroPlaying = playing && state.hero && state.current.id === state.hero.id;
+    const mainIcon = $('main-play-icon');
+    mainIcon.classList.toggle('fa-pause', playing);
+    mainIcon.classList.toggle('fa-play', !playing);
+    $('hero-btn-icon').classList.toggle('fa-pause', heroPlaying);
+    $('hero-btn-icon').classList.toggle('fa-play', !heroPlaying);
+    $('hero-btn-text').innerText = heroPlaying ? 'Pause' : 'Play';
+    $('hero-label').innerText = heroPlaying ? 'NOW PLAYING' : 'FEATURED TODAY';
+    $('hero-vinyl').classList.toggle('paused-spin', !playing);
+    $('hero-visualizer').classList.toggle('eq-paused', !playing);
+    document.title = playing ? `${state.current.title} \u2022 MIDNIGHT` : APP_TITLE;
+}
+
+function updateSeekProgress(val) {
+    setSliderGradient($('seek-slider'), val);
+    if (isFinite(audio.duration) && audio.duration) {
+        audio.currentTime = (val / 100) * audio.duration;
+        $('current-time').innerText = formatTime(audio.currentTime);
+    }
+}
+
+function adjustVolume(val, save = true) {
+    val = Number(val);
+    audio.volume = val / 100;
+    $('volume-slider').value = val;
+    setSliderGradient($('volume-slider'), val);
+    if (val > 0) state.lastVolume = val;
+    const icon = $('volume-btn').querySelector('i');
+    if (val === 0) icon.className = 'fa-solid fa-volume-xmark text-xs text-rose-400';
+    else if (val < 50) icon.className = 'fa-solid fa-volume-low text-xs';
+    else icon.className = 'fa-solid fa-volume-high text-xs';
+    if (save) saveStateSoon();
+}
+function toggleMute() {
+    const slider = $('volume-slider');
+    const next = Number(slider.value) > 0 ? 0 : (state.lastVolume || 80);
+    slider.value = next;
+    adjustVolume(next);
+}
+
+function applyShuffleUI() { $('shuffle-btn').classList.toggle('text-midnight-accent', state.shuffle); }
+function applyRepeatUI() {
+    $('repeat-btn').classList.toggle('text-midnight-accent', state.repeat !== 'off');
+    $('repeat-one').classList.toggle('hidden', state.repeat !== 'one');
+}
+function toggleShuffle() {
+    state.shuffle = !state.shuffle;
+    applyShuffleUI();
+    showToast(state.shuffle ? 'Shuffle Enabled' : 'Shuffle Disabled');
+    saveStateSoon();
+}
+function toggleRepeat() {
+    const order = ['off', 'all', 'one'];
+    state.repeat = order[(order.indexOf(state.repeat) + 1) % order.length];
+    applyRepeatUI();
+    showToast({ off: 'Repeat Disabled', all: 'Repeating the queue', one: 'Repeat Track Enabled' }[state.repeat]);
+    saveStateSoon();
+}
+
+/* persisted player state */
+function saveStateSoon() {
+    if (!state.ready) return;
+    clearTimeout(saveStateSoon.t);
+    saveStateSoon.t = setTimeout(() => {
+        api('/player/state', {
+            method: 'PUT',
+            body: {
+                trackId: state.current ? state.current.id : null,
+                volume: Number($('volume-slider').value),
+                shuffle: state.shuffle,
+                repeat: state.repeat,
+                queue: state.queue.map((t) => t.id).slice(0, 200),
+            },
+        }).catch(() => {});
+    }, 1000);
+}
+
+async function restorePlayer() {
+    const { state: s } = await api('/player/state');
+    if (!s) return;
+    $('volume-slider').value = s.volume;
+    adjustVolume(s.volume, false);
+    state.shuffle = s.shuffle; applyShuffleUI();
+    state.repeat = s.repeat; applyRepeatUI();
+    state.queue = reg(s.queue);
+    if (s.track) {
+        reg([s.track]);
+        let idx = state.queue.findIndex((t) => t.id === s.track.id);
+        if (idx < 0) { state.queue.unshift(s.track); idx = 0; }
+        state.qIndex = idx;
+        loadAndPlay(s.track, { autoplay: false });
+    }
+}
+
+/* ---------------------------------------------------------------- queue */
+function toggleQueue() {
+    $('queue-panel').classList.toggle('hidden');
+    renderQueue();
+}
+function renderQueue() {
+    const panel = $('queue-panel');
+    if (panel.classList.contains('hidden')) return;
+    const box = $('queue-list');
+    if (!state.queue.length) { box.innerHTML = '<p class="text-[11px] text-midnight-muted p-3">The queue is empty. Play a song or use \u22EF \u2192 Add to queue.</p>'; return; }
+    box.innerHTML = state.queue.map((t, i) => {
+        const cur = i === state.qIndex;
+        return `<div data-act="queue-jump" data-idx="${i}" class="flex items-center space-x-3 p-2 rounded-lg ${cur ? 'bg-midnight-hover' : 'hover:bg-midnight-hover/60'} cursor-pointer group">
+            <img src="${esc(coverOf(t, 'cover_small'))}" ${IMG_FALLBACK} class="w-8 h-8 rounded object-cover flex-shrink-0" alt="">
+            <div class="min-w-0 flex-1">
+                <p dir="auto" class="text-[11px] font-semibold truncate ${cur ? 'text-midnight-accent' : 'text-gray-200'}">${esc(t.title)}</p>
+                <p dir="auto" class="text-[10px] text-midnight-muted truncate">${esc(t.artist_name)}</p>
+            </div>
+            ${cur ? '<i class="fa-solid fa-volume-high text-[10px] text-midnight-accent"></i>'
+                  : `<button data-act="queue-remove" data-idx="${i}" class="text-midnight-muted hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity"><i class="fa-solid fa-xmark text-[10px]"></i></button>`}
+        </div>`;
+    }).join('');
+}
+function queueAdd(track) {
+    if (!state.queue.length) return playQueue([track], 0);
+    state.queue.push(track);
+    renderQueue(); saveStateSoon();
+    showToast('Added to queue');
+}
+function queuePlayNext(track) {
+    if (!state.queue.length) return playQueue([track], 0);
+    state.queue.splice(state.qIndex + 1, 0, track);
+    renderQueue(); saveStateSoon();
+    showToast('Playing next');
+}
+function queueRemove(idx) {
+    if (idx === state.qIndex) return;
+    state.queue.splice(idx, 1);
+    if (idx < state.qIndex) state.qIndex--;
+    renderQueue(); saveStateSoon();
+}
+function queueClear() {
+    state.queue = state.current ? [state.current] : [];
+    state.qIndex = state.current ? 0 : -1;
+    state.prevStack = [];
+    renderQueue(); saveStateSoon();
+}
+
+/* ---------------------------------------------------------------- likes */
+async function loadLikedIds() { state.liked = new Set((await api('/likes/ids')).ids); }
+
+async function toggleLike(id) {
+    if (!id) return;
+    const was = state.liked.has(id);
+    if (was) state.liked.delete(id); else state.liked.add(id);
+    updateHearts();
+    try {
+        await api(`/likes/${id}`, { method: was ? 'DELETE' : 'POST' });
+        showToast(was ? 'Removed from Liked Songs' : 'Added to Liked Songs');
+        if (currentView() === 'liked') renderLiked();
+    } catch (err) {
+        if (was) state.liked.add(id); else state.liked.delete(id);
+        updateHearts();
+        showToast(err.message);
+    }
+}
+
+/* ------------------------------------------------------------ playlists */
+function createNewPlaylist(pendingTrackId = 0) {
+    openModal(`
+        <h3 class="text-sm font-semibold text-gray-100 mb-4">New playlist</h3>
+        <form class="space-y-3" onsubmit="submitNewPlaylist(event, ${Number(pendingTrackId) || 0})">
+            <input name="name" required maxlength="100" autofocus placeholder="Playlist name" class="${INPUT_CLS}">
+            <input name="description" maxlength="500" placeholder="Description (optional)" class="${INPUT_CLS}">
+            <p id="modal-error" class="text-[11px] text-rose-400 min-h-[1rem]"></p>
+            <div class="flex justify-end space-x-2">
+                <button type="button" data-act="close-modal" class="${BTN_OUTLINE}">Cancel</button>
+                <button type="submit" class="${BTN_PRIMARY}">Create</button>
+            </div>
+        </form>`);
+}
+async function submitNewPlaylist(e, trackId) {
+    e.preventDefault();
+    const body = Object.fromEntries(new FormData(e.target).entries());
+    try {
+        const { playlist } = await api('/playlists', { method: 'POST', body });
+        if (trackId) await api(`/playlists/${playlist.id}/tracks`, { method: 'POST', body: { trackId } });
+        closeModal();
+        await loadPlaylists();
+        showToast(trackId ? `Added to ${playlist.name}` : 'New Playlist Created');
+        if (currentView() === 'playlists') renderPlaylistsView();
+    } catch (err) { $('modal-error').textContent = err.message; }
+}
+function openPlaylistRename(id) {
+    const p = state.playlists.find((x) => x.id === id);
+    openModal(`
+        <h3 class="text-sm font-semibold text-gray-100 mb-4">Rename playlist</h3>
+        <form class="space-y-3" onsubmit="submitRename(event, ${id})">
+            <input name="name" required maxlength="100" value="${esc(p ? p.name : '')}" class="${INPUT_CLS}">
+            <p id="modal-error" class="text-[11px] text-rose-400 min-h-[1rem]"></p>
+            <div class="flex justify-end space-x-2">
+                <button type="button" data-act="close-modal" class="${BTN_OUTLINE}">Cancel</button>
+                <button type="submit" class="${BTN_PRIMARY}">Save</button>
+            </div>
+        </form>`);
+}
+async function submitRename(e, id) {
+    e.preventDefault();
+    try {
+        await api(`/playlists/${id}`, { method: 'PATCH', body: { name: new FormData(e.target).get('name') } });
+        closeModal();
+        await loadPlaylists();
+        refreshView();
+        showToast('Playlist renamed');
+    } catch (err) { $('modal-error').textContent = err.message; }
+}
+async function deletePlaylist(id) {
+    if (!confirm('Delete this playlist? This cannot be undone.')) return;
+    await api(`/playlists/${id}`, { method: 'DELETE' });
+    await loadPlaylists();
+    showToast('Playlist deleted');
+    navigate('playlists');
+}
+function openPlaylistPicker(trackId) {
+    const items = state.playlists.map((p) => `
+        <button data-act="pick-playlist" data-pl="${p.id}" data-id="${trackId}" class="w-full flex items-center space-x-3 p-2 rounded-lg hover:bg-midnight-hover text-left">
+            ${plThumb(p, 'w-9 h-9')}
+            <div class="min-w-0"><p dir="auto" class="text-xs font-medium text-gray-200 truncate">${esc(p.name)}</p>
+            <p class="text-[10px] text-midnight-muted">${p.track_count} tracks</p></div>
+        </button>`).join('');
+    openModal(`
+        <h3 class="text-sm font-semibold text-gray-100 mb-3">Add to playlist</h3>
+        <div class="max-h-64 overflow-y-auto space-y-1 mb-3">${items || '<p class="text-xs text-midnight-muted p-2">You have no playlists yet.</p>'}</div>
+        <button data-act="new-playlist-with" data-id="${trackId}" class="${BTN_OUTLINE} w-full justify-center"><i class="fa-solid fa-plus text-xs"></i><span>New playlist</span></button>`);
+}
+async function addToPlaylist(plId, trackId) {
+    const r = await api(`/playlists/${plId}/tracks`, { method: 'POST', body: { trackId } });
+    const p = state.playlists.find((x) => x.id === plId);
+    closeModal();
+    showToast(r.added ? `Added to ${p ? p.name : 'playlist'}` : `Already in ${p ? p.name : 'playlist'}`);
+    await loadPlaylists();
+}
+async function removeFromPlaylist(plId, trackId) {
+    await api(`/playlists/${plId}/tracks/${trackId}`, { method: 'DELETE' });
+    showToast('Removed from playlist');
+    await loadPlaylists();
+    refreshView();
+}
+
+/* ---------------------------------------------------------- context menu */
+function openTrackMenu(btn, trackId, plId) {
+    const t = tracksById.get(trackId);
+    if (!t) return;
+    const liked = state.liked.has(trackId);
+    const items = [
+        { icon: 'fa-forward', label: 'Play next', fn: () => queuePlayNext(t) },
+        { icon: 'fa-list-ul', label: 'Add to queue', fn: () => queueAdd(t) },
+        { icon: 'fa-plus', label: 'Add to playlist\u2026', fn: () => openPlaylistPicker(trackId) },
+    ];
+    if (plId) items.push({ icon: 'fa-trash', label: 'Remove from this playlist', fn: () => removeFromPlaylist(plId, trackId) });
+    items.push({ icon: liked ? 'fa-heart-crack' : 'fa-heart', label: liked ? 'Remove from Liked Songs' : 'Add to Liked Songs', fn: () => toggleLike(trackId) });
+    if (t.artist_id) items.push({ icon: 'fa-user', label: 'Go to artist', fn: () => navigate('detail', { kind: 'artist', id: String(t.artist_id) }) });
+    if (t.album_id) items.push({ icon: 'fa-record-vinyl', label: 'Go to album', fn: () => navigate('detail', { kind: 'album', id: String(t.album_id) }) });
+    state.menuItems = items;
+
+    const menu = $('ctx-menu');
+    menu.innerHTML = items.map((it, i) => `<button data-act="menu-item" data-i="${i}" class="w-full text-left px-3 py-2 rounded-lg text-xs text-gray-300 hover:bg-midnight-hover hover:text-midnight-accent flex items-center space-x-3"><i class="fa-solid ${it.icon} w-4 text-center text-midnight-muted"></i><span>${esc(it.label)}</span></button>`).join('');
+    menu.classList.remove('hidden');
+    const r = btn.getBoundingClientRect();
+    menu.style.top = `${Math.max(8, Math.min(r.bottom + 6, window.innerHeight - menu.offsetHeight - 100))}px`;
+    menu.style.left = `${Math.max(8, Math.min(r.right - menu.offsetWidth, window.innerWidth - menu.offsetWidth - 8))}px`;
+}
+function hideMenu() { $('ctx-menu').classList.add('hidden'); }
+
+/* -------------------------------------------------------- notifications */
+async function loadNotifications() {
+    const { items, unread } = await api('/notifications');
+    state.notifications = items;
+    state.unread = unread;
+    renderNotifications();
+}
+const NOTIF_STYLE = {
+    welcome: ['fa-star', 'bg-indigo-500/20 text-indigo-400'],
+    new_release: ['fa-compact-disc', 'bg-midnight-accent/20 text-midnight-accent'],
+};
+function renderNotifications() {
+    $('notification-dot').classList.toggle('hidden', state.unread === 0);
+    $('notifications-list').innerHTML = state.notifications.length
+        ? state.notifications.map((n) => {
+            const [icon, tone] = NOTIF_STYLE[n.type] || ['fa-bell', 'bg-midnight-accent/20 text-midnight-accent'];
+            return `<div data-act="notif" data-id="${n.id}" class="flex items-start space-x-3 p-2.5 rounded-xl ${n.is_read ? 'bg-midnight-hover/20 opacity-70' : 'bg-midnight-hover/50'} hover:bg-midnight-hover transition-colors cursor-pointer group">
+                <div class="w-8 h-8 rounded-full ${tone} flex items-center justify-center shrink-0 mt-0.5"><i class="fa-solid ${icon}"></i></div>
+                <div class="flex-1 min-w-0">
+                    <p dir="auto" class="font-medium text-gray-200 text-[11px]">${esc(n.title)}</p>
+                    ${n.body ? `<p dir="auto" class="text-[10px] text-gray-400 mt-0.5">${esc(n.body)}</p>` : ''}
+                    <p class="text-[10px] text-midnight-muted mt-0.5">${timeAgo(n.created_at)}</p>
+                </div>
+                <button data-act="notif-del" data-id="${n.id}" class="text-midnight-muted hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity" title="Dismiss"><i class="fa-solid fa-xmark text-[10px]"></i></button>
+            </div>`;
+        }).join('')
+        : '<p class="text-[11px] text-midnight-muted p-2">You\u2019re all caught up.</p>';
+}
+function toggleNotifications(event) {
+    event.stopPropagation();
+    hideMenu();
+    $('notifications-dropdown').classList.toggle('hidden');
+}
+async function markAllNotificationsRead() {
+    await api('/notifications/read-all', { method: 'POST' });
+    await loadNotifications();
+    showToast('Notifications marked as read');
+}
+
+/* ------------------------------------------------------------- the mix */
+async function playMix() {
+    showToast('Building your mix\u2026');
+    try {
+        const { tracks } = await api('/music/recommendations');
+        if (!tracks.length) return showToast('No recommendations available yet');
+        playQueue(tracks, 0);
+        showToast('Playing your mix');
+    } catch (err) { showToast(err.message); }
+}
+
+/* ------------------------------------------------- global click handling */
+document.addEventListener('click', async (e) => {
+    if (!e.target.closest('#ctx-menu')) hideMenu();
+    if (!e.target.closest('#queue-panel, #queue-btn')) $('queue-panel').classList.add('hidden');
+    if (!e.target.closest('#notifications-dropdown, #notification-btn')) $('notifications-dropdown').classList.add('hidden');
+    if (!e.target.closest('#profile-menu, [data-act="profile-menu"]')) $('profile-menu').classList.add('hidden');
+
+    const el = e.target.closest('[data-act]');
+    if (!el) return;
+    e.preventDefault();
+    try { await handleAct(el.dataset.act, el); }
+    catch (err) { showToast(err.message || 'Something went wrong'); }
+});
+
+async function handleAct(act, el) {
+    const d = el.dataset;
+    const id = Number(d.id);
+    switch (act) {
+        case 'play': {
+            const list = lists[d.ctx];
+            const track = list && list[Number(d.idx)];
+            if (!track) return;
+            if (state.current && state.current.id === track.id) return togglePlayPause();
+            return playQueue(list, Number(d.idx));
+        }
+        case 'play-all': { const list = lists[d.ctx]; if (list && list.length) playQueue(list, 0); else showToast('Nothing to play'); return; }
+        case 'like': return toggleLike(id);
+        case 'menu': return openTrackMenu(el, id, d.pl ? Number(d.pl) : null);
+        case 'menu-item': { hideMenu(); const it = state.menuItems[Number(d.i)]; if (it) await it.fn(); return; }
+        case 'open':
+            if (!d.id || d.id === '0') return;
+            return navigate('detail', { kind: d.kind, id: d.id });
+        case 'card-play': {
+            showToast('Loading\u2026');
+            const c = await loadCollection(d.kind, d.id);
+            return playQueue(c.tracks, 0);
+        }
+        case 'follow-artist': {
+            const on = d.on === '1';
+            await api(`/library/artists/${id}/follow`, { method: on ? 'DELETE' : 'POST' });
+            el.outerHTML = followBtn(id, !on);
+            return showToast(on ? 'Unfollowed' : 'Following \u2014 you\u2019ll get new release alerts');
+        }
+        case 'save-album': {
+            const on = d.on === '1';
+            await api(`/library/albums/${id}/save`, { method: on ? 'DELETE' : 'POST' });
+            el.outerHTML = saveBtn(id, !on);
+            return showToast(on ? 'Removed from your albums' : 'Album saved');
+        }
+        case 'rename-playlist': return openPlaylistRename(id);
+        case 'delete-playlist': return deletePlaylist(id);
+        case 'pick-playlist': return addToPlaylist(Number(d.pl), id);
+        case 'new-playlist-with': return createNewPlaylist(id);
+        case 'close-modal': return closeModal();
+        case 'switch-auth': return showAuth(d.mode);
+        case 'profile-menu': $('profile-menu').classList.toggle('hidden'); return;
+        case 'logout': return logout(false);
+        case 'queue-jump': { const i = Number(d.idx); if (i === state.qIndex) return togglePlayPause(); state.prevStack.push(state.qIndex); state.qIndex = i; loadAndPlay(state.queue[i]); return saveStateSoon(); }
+        case 'queue-remove': return queueRemove(Number(d.idx));
+        case 'queue-clear': return queueClear();
+        case 'notif': {
+            const n = state.notifications.find((x) => x.id === id);
+            if (n && !n.is_read) { await api(`/notifications/${id}/read`, { method: 'PATCH' }); await loadNotifications(); }
+            if (n && n.data && n.data.album_id) { $('notifications-dropdown').classList.add('hidden'); navigate('detail', { kind: 'album', id: String(n.data.album_id) }); }
+            return;
+        }
+        case 'notif-del': await api(`/notifications/${id}`, { method: 'DELETE' }); return loadNotifications();
+    }
+}
+
+    </script>
+</body>
+</html>
