@@ -1,6 +1,11 @@
 # MIDNIGHT backend
-![Midnight Music Player](assets/ui.png)
+<p align="center">
+  <img src="assets/icon.png" alt="MIDNIGHT icon" width="90">
+</p>
 
+<p align="center">
+  <img src="assets/ui.png" alt="MIDNIGHT music player UI" width="800">
+</p>
 
 Express + PostgreSQL backend for the MIDNIGHT dark music player. Music data (images, metadata, audio previews)
 comes from the Deezer API through the server; users, likes, playlists, history, notifications and player state live in PostgreSQL.
